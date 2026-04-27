@@ -16,6 +16,7 @@ type FormData = {
   link_pengumpulan: string;
   deskripsi: string;
   soal: string;
+  screenshot_url: string;
 };
 
 const emptyForm: FormData = {
@@ -25,6 +26,7 @@ const emptyForm: FormData = {
   link_pengumpulan: "",
   deskripsi: "",
   soal: "",
+  screenshot_url: "",
 };
 
 function getStatus(task: Task): "aktif" | "terlambat" | "selesai" {
@@ -100,6 +102,7 @@ export default function AdminPage() {
         link_pengumpulan: form.link_pengumpulan || null,
         deskripsi: form.deskripsi || null,
         soal: form.soal || null,
+        screenshot_url: form.screenshot_url || null,
         updated_at: new Date().toISOString(),
       }).eq("id", editId);
     } else {
@@ -110,6 +113,7 @@ export default function AdminPage() {
         link_pengumpulan: form.link_pengumpulan || null,
         deskripsi: form.deskripsi || null,
         soal: form.soal || null,
+        screenshot_url: form.screenshot_url || null,
         selesai: false,
       });
     }
@@ -147,6 +151,7 @@ export default function AdminPage() {
       link_pengumpulan: task.link_pengumpulan || "",
       deskripsi: task.deskripsi || "",
       soal: task.soal || "",
+      screenshot_url: task.screenshot_url || "",
     });
     setEditId(task.id);
     setShowForm(true);
@@ -324,6 +329,36 @@ export default function AdminPage() {
                     rows={3}
                     className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-[#f5c518]/50 transition-colors resize-none"
                   />
+                </div>
+
+                {/* Screenshot URL */}
+                <div>
+                  <label className="text-[#888] text-xs font-medium block mb-1.5">Link Screenshot / Gambar</label>
+                  <input
+                    type="url"
+                    value={form.screenshot_url}
+                    onChange={(e) => setForm({ ...form, screenshot_url: e.target.value })}
+                    placeholder="https://imgur.com/... atau https://i.imgur.com/..."
+                    className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-3 py-2.5 text-white text-sm outline-none focus:border-[#f5c518]/50 transition-colors"
+                  />
+                  <p className="text-[#555] text-xs mt-1">Bisa pakai link Imgur langsung</p>
+                  {/* Preview gambar */}
+                  {form.screenshot_url && (
+                    <img
+                      src={
+                        (() => {
+                          const match = form.screenshot_url.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)$/)
+                          return match ? `https://i.imgur.com/${match[1]}.jpg` : form.screenshot_url
+                        })()
+                      }
+                      alt="Preview"
+                      className="mt-2 rounded-lg border border-[#2a2a2a] w-full object-contain max-h-40"
+                      onError={(e) => {
+                        const t = e.currentTarget
+                        if (t.src.endsWith('.jpg')) t.src = t.src.replace('.jpg', '.png')
+                      }}
+                    />
+                  )}
                 </div>
 
                 <button
