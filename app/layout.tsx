@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'TugasKu — Track Tugasmu',
+  title: 'MyTugas — Track Tugas',
   description: 'Aplikasi tracking tugas kuliah/sekolah yang simpel dan cepat',
 }
 
