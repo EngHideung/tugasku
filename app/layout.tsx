@@ -1,19 +1,19 @@
-import type { Metadata } from 'next'
-import './globals.css'
+import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: 'MyTugas — Track Tugas',
-  description: 'Aplikasi tracking tugas kuliah/sekolah yang simpel dan cepat',
-}
+  title: "TugasKu - Daftar Tugas Kelas",
+  description: "Pantau deadline tugas kelas kamu",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="id">
-      <body className="antialiased">{children}</body>
+      <body>{children}</body>
     </html>
-  )
+  );
 }
