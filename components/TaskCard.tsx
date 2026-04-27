@@ -21,8 +21,8 @@ import { id as idLocale } from 'date-fns/locale/id'
 
 interface TaskCardProps {
   task: Task
-  onToggle: (id: string, selesai: boolean) => void
-  onDelete: (id: string) => void
+  onToggle?: (id: string, selesai: boolean) => void
+  onDelete?: (id: string) => void
 }
 
 function getDeadlineStatus(deadline: string) {
@@ -78,18 +78,31 @@ export default function TaskCard({ task, onToggle, onDelete }: TaskCardProps) {
       <div className="p-5 pt-6">
         {/* Header row */}
         <div className="flex items-start gap-3">
-          {/* Checkbox */}
-          <button
-            onClick={() => onToggle(task.id, !task.selesai)}
-            className="mt-0.5 flex-shrink-0 text-gray-400 hover:text-blue-500 transition-colors"
-            title={task.selesai ? 'Tandai belum selesai' : 'Tandai selesai'}
-          >
-            {task.selesai ? (
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-            ) : (
-              <Circle className="w-5 h-5" />
-            )}
-          </button>
+          {/* Checkbox - hanya tampil kalau onToggle ada */}
+          {onToggle ? (
+            <button
+              onClick={() => onToggle(task.id, !task.selesai)}
+              className="mt-0.5 flex-shrink-0 text-gray-400 hover:text-blue-500 transition-colors"
+              title={task.selesai ? 'Tandai belum selesai' : 'Tandai selesai'}
+            >
+              {task.selesai ? (
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              ) : (
+                <Circle className="w-5 h-5" />
+              )}
+            </button>
+          ) : (
+            /* Icon status read-only */
+            <div className="mt-0.5 flex-shrink-0">
+              {task.selesai ? (
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              ) : deadlineStatus === 'overdue' ? (
+                <Circle className="w-5 h-5 text-red-400" />
+              ) : (
+                <Circle className="w-5 h-5 text-gray-300" />
+              )}
+            </div>
+          )}
 
           {/* Title & badges */}
           <div className="flex-1 min-w-0">
@@ -134,14 +147,16 @@ export default function TaskCard({ task, onToggle, onDelete }: TaskCardProps) {
             </div>
           </div>
 
-          {/* Delete button */}
-          <button
-            onClick={() => onDelete(task.id)}
-            className="flex-shrink-0 p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-            title="Hapus tugas"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {/* Delete button - hanya tampil kalau onDelete ada */}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(task.id)}
+              className="flex-shrink-0 p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+              title="Hapus tugas"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Deadline */}
