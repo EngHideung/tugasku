@@ -25,6 +25,14 @@ interface TaskCardProps {
   onDelete?: (id: string) => void
 }
 
+function toDirectImageUrl(url: string): string {
+  // Convert imgur page URL ke direct image link
+  // https://imgur.com/abc123 → https://i.imgur.com/abc123.jpg
+  const imgurPage = url.match(/^https?:\/\/(?:www\.)?imgur\.com\/([a-zA-Z0-9]+)$/)
+  if (imgurPage) return `https://i.imgur.com/${imgurPage[1]}.jpg`
+  return url
+}
+
 function getDeadlineStatus(deadline: string) {
   const d = new Date(deadline)
   if (isPast(d) && !isToday(d)) return 'overdue'
@@ -234,13 +242,21 @@ export default function TaskCard({ task, onToggle, onDelete }: TaskCardProps) {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <ImageIcon className="w-3.5 h-3.5" /> Screenshot
                 </p>
-                <a href={task.screenshot_url} target="_blank" rel="noopener noreferrer">
+                <a href={toDirectImageUrl(task.screenshot_url)} target="_blank" rel="noopener noreferrer">
                   <img
-                    src={task.screenshot_url}
+                    src={toDirectImageUrl(task.screenshot_url)}
                     alt="Screenshot tugas"
-                    className="rounded-xl border border-gray-200 max-h-64 object-contain hover:opacity-90 transition-opacity cursor-zoom-in"
+                    className="rounded-xl border border-gray-200 w-full object-contain hover:opacity-90 transition-opacity cursor-zoom-in"
+                    onError={(e) => {
+                      // Fallback: coba tanpa ekstensi kalau .jpg gagal
+                      const target = e.currentTarget
+                      if (target.src.endsWith('.jpg')) {
+                        target.src = target.src.replace('.jpg', '.png')
+                      }
+                    }}
                   />
                 </a>
+                <p className="text-xs text-gray-400 mt-1.5">Klik gambar untuk buka full size</p>
               </div>
             )}
           </div>
