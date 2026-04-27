@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase'
 import { CreateTaskInput } from '@/types'
 
 export async function GET() {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('tasks')
     .select('*')
@@ -13,6 +14,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = createClient();
   const body: CreateTaskInput = await request.json()
 
   const { data, error } = await supabase
