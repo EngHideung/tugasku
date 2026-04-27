@@ -88,7 +88,11 @@ export default function HomePage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm">
-                <ListTodo className="w-5 h-5 text-white" />
+                <img
+                  src="/logomtg.png"
+                  alt="Logo"
+                  className="w-9 h-9 rounded-xl object-cover"
+                />
               </div>
               <div>
                 <h1 className="font-bold text-gray-900 text-lg leading-none">MyTugasGwejh</h1>
