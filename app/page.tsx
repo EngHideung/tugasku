@@ -1,229 +1,240 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase";
-import { Task } from "@/types/task";
+import { useState, useEffect, useMemo } from 'react'
+import { Task } from '@/types'
+import TaskCard from '@/components/TaskCard'
+import { createClient } from '@/lib/supabase'
+import {
+  ListTodo,
+  CheckSquare,
+  Clock,
+  Search,
+  BookOpen,
+  FlaskConical,
+  SlidersHorizontal,
+  AlertTriangle,
+} from 'lucide-react'
 
-type StatusFilter = "semua" | "aktif" | "terlambat" | "selesai";
+type FilterStatus = 'semua' | 'aktif' | 'terlambat' | 'selesai'
+type FilterTipe = 'semua' | 'teori' | 'praktikum'
+type SortBy = 'deadline' | 'nama' | 'created'
 
-function getStatus(task: Task): "aktif" | "terlambat" | "selesai" {
-  if (task.selesai) return "selesai";
-  const now = new Date();
-  const deadline = new Date(task.deadline);
-  return deadline < now ? "terlambat" : "aktif";
-}
-
-function getTimeLeft(deadline: string): string {
-  const now = new Date();
-  const dl = new Date(deadline);
-  const diff = dl.getTime() - now.getTime();
-  if (diff <= 0) {
-    const absDiff = Math.abs(diff);
-    const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    if (days > 0) return `${days} hari yang lalu`;
-    if (hours > 0) return `${hours} jam yang lalu`;
-    return "Baru saja lewat";
-  }
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  if (days > 0) return `${days} hari lagi`;
-  if (hours > 0) return `${hours} jam lagi`;
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return `${minutes} menit lagi`;
-}
-
-function formatDeadline(deadline: string): string {
-  return new Date(deadline).toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-export default function PublicPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<StatusFilter>("semua");
-  const [now, setNow] = useState(new Date());
+export default function HomePage() {
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('aktif')
+  const [filterTipe, setFilterTipe] = useState<FilterTipe>('semua')
+  const [sortBy, setSortBy] = useState<SortBy>('deadline')
+  const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 60000);
-    return () => clearInterval(interval);
-  }, []);
+    const supabase = createClient()
 
-  useEffect(() => {
-    const supabase = createClient();
     const fetchTasks = async () => {
       const { data } = await supabase
-        .from("tasks")
-        .select("*")
-        .order("deadline", { ascending: true });
-      setTasks(data || []);
-      setLoading(false);
-    };
-    fetchTasks();
+        .from('tasks')
+        .select('*')
+        .order('deadline', { ascending: true })
+      setTasks(data || [])
+      setLoading(false)
+    }
+
+    fetchTasks()
 
     const channel = supabase
-      .channel("tasks-public")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tasks" }, fetchTasks)
-      .subscribe();
+      .channel('tasks-public')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, fetchTasks)
+      .subscribe()
 
-    return () => { supabase.removeChannel(channel); };
-  }, []);
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
-  const filtered = tasks.filter((t) => {
-    if (filter === "semua") return true;
-    return getStatus(t) === filter;
-  });
+  const getTaskStatus = (task: Task): 'aktif' | 'terlambat' | 'selesai' => {
+    if (task.selesai) return 'selesai'
+    return new Date(task.deadline) < new Date() ? 'terlambat' : 'aktif'
+  }
 
-  const counts = {
-    semua: tasks.length,
-    aktif: tasks.filter((t) => getStatus(t) === "aktif").length,
-    terlambat: tasks.filter((t) => getStatus(t) === "terlambat").length,
-    selesai: tasks.filter((t) => getStatus(t) === "selesai").length,
-  };
+  const filtered = useMemo(() => {
+    return tasks
+      .filter(t => {
+        const status = getTaskStatus(t)
+        const matchStatus = filterStatus === 'semua' || status === filterStatus
+        const matchTipe = filterTipe === 'semua' || t.tipe === filterTipe
+        const matchSearch =
+          !search ||
+          t.nama_tugas.toLowerCase().includes(search.toLowerCase()) ||
+          (t.soal || '').toLowerCase().includes(search.toLowerCase())
+        return matchStatus && matchTipe && matchSearch
+      })
+      .sort((a, b) => {
+        if (sortBy === 'deadline')
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
+        if (sortBy === 'nama') return a.nama_tugas.localeCompare(b.nama_tugas)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
+  }, [tasks, filterStatus, filterTipe, search, sortBy])
+
+  const stats = useMemo(() => ({
+    aktif: tasks.filter(t => getTaskStatus(t) === 'aktif').length,
+    terlambat: tasks.filter(t => getTaskStatus(t) === 'terlambat').length,
+    selesai: tasks.filter(t => getTaskStatus(t) === 'selesai').length,
+  }), [tasks])
 
   return (
-    <main className="min-h-screen bg-[#0d0d0d]">
-      {/* Header */}
-      <header className="border-b border-[#1e1e1e] bg-[#0d0d0d] sticky top-0 z-10 backdrop-blur-sm">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-[#f5c518] flex items-center justify-center">
-              <span className="text-black font-black text-sm">T</span>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+                <ListTodo className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="font-bold text-gray-900 text-lg leading-none">TugasKu</h1>
+                <p className="text-xs text-gray-400 mt-0.5">Daftar tugas kelas</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-white font-bold text-base leading-none">TugasKu</h1>
-              <p className="text-[#666] text-xs mt-0.5">Daftar tugas kelas</p>
-            </div>
+            <a
+              href="/admin"
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Admin →
+            </a>
           </div>
-          <a
-            href="/admin"
-            className="text-xs text-[#444] hover:text-[#666] transition-colors"
-          >
-            Admin →
-          </a>
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
-        {/* Filter tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
-          {(["semua", "aktif", "terlambat", "selesai"] as StatusFilter[]).map((f) => (
+      <main className="max-w-2xl mx-auto px-4 py-6 space-y-5">
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-blue-600">{stats.aktif}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Masih ada waktu</p>
+          </div>
+          <div className={`rounded-2xl border p-4 text-center ${stats.terlambat > 0 ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'}`}>
+            <p className={`text-2xl font-bold ${stats.terlambat > 0 ? 'text-red-600' : 'text-gray-900'}`}>{stats.terlambat}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Terlambat</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-green-600">{stats.selesai}</p>
+            <p className="text-xs text-gray-400 mt-0.5">Selesai</p>
+          </div>
+        </div>
+
+        {/* Search & Filter */}
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Cari tugas..."
+                className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                filter === f
-                  ? f === "aktif"
-                    ? "bg-[#22c55e] text-black"
-                    : f === "terlambat"
-                    ? "bg-[#ef4444] text-white"
-                    : f === "selesai"
-                    ? "bg-[#3b82f6] text-white"
-                    : "bg-[#f5c518] text-black"
-                  : "bg-[#1a1a1a] text-[#666] hover:text-[#999]"
-              }`}
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors ${showFilters ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-200 text-gray-600'}`}
             >
-              {f === "semua" ? "Semua" : f === "aktif" ? "Masih Ada Waktu" : f === "terlambat" ? "Terlambat" : "Selesai"}
-              <span className="ml-1.5 opacity-70">{counts[f]}</span>
+              <SlidersHorizontal className="w-4 h-4" />
             </button>
-          ))}
+          </div>
+
+          {showFilters && (
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Status</p>
+                <div className="flex gap-2 flex-wrap">
+                  {([
+                    { value: 'semua', label: 'Semua', icon: <ListTodo className="w-3 h-3" /> },
+                    { value: 'aktif', label: 'Aktif', icon: <Clock className="w-3 h-3" /> },
+                    { value: 'terlambat', label: 'Terlambat', icon: <AlertTriangle className="w-3 h-3" /> },
+                    { value: 'selesai', label: 'Selesai', icon: <CheckSquare className="w-3 h-3" /> },
+                  ] as { value: FilterStatus; label: string; icon: React.ReactNode }[]).map(s => (
+                    <button key={s.value} onClick={() => setFilterStatus(s.value)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        filterStatus === s.value
+                          ? s.value === 'terlambat' ? 'bg-red-600 text-white'
+                            : s.value === 'selesai' ? 'bg-green-600 text-white'
+                            : 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {s.icon}{s.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Tipe</p>
+                <div className="flex gap-2">
+                  {(['semua', 'teori', 'praktikum'] as FilterTipe[]).map(t => (
+                    <button key={t} onClick={() => setFilterTipe(t)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${filterTipe === t ? (t === 'praktikum' ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white') : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    >
+                      {t === 'teori' && <BookOpen className="w-3 h-3" />}
+                      {t === 'praktikum' && <FlaskConical className="w-3 h-3" />}
+                      {t === 'semua' && <ListTodo className="w-3 h-3" />}
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Urutkan</p>
+                <div className="flex gap-2">
+                  {(['deadline', 'nama', 'created'] as SortBy[]).map(s => (
+                    <button key={s} onClick={() => setSortBy(s)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${sortBy === s ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    >
+                      {s === 'deadline' ? 'Deadline' : s === 'nama' ? 'Nama A-Z' : 'Terbaru'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Task list */}
         {loading ? (
           <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-28 rounded-xl bg-[#1a1a1a] animate-pulse" />
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-gray-200 p-5 animate-pulse">
+                <div className="flex gap-3">
+                  <div className="w-5 h-5 bg-gray-200 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-100 rounded w-1/2" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
-            <div className="text-4xl mb-3">
-              {filter === "aktif" ? "🎉" : filter === "terlambat" ? "✅" : "📭"}
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <ListTodo className="w-8 h-8 text-gray-400" />
             </div>
-            <p className="text-[#444] text-sm">
-              {filter === "aktif"
-                ? "Tidak ada tugas yang perlu dikerjakan"
-                : filter === "terlambat"
-                ? "Tidak ada tugas yang terlambat"
-                : "Belum ada tugas"}
+            <h3 className="font-semibold text-gray-600 mb-1">
+              {tasks.length === 0 ? 'Belum ada tugas' : 'Tidak ada tugas ditemukan'}
+            </h3>
+            <p className="text-sm text-gray-400">
+              {tasks.length === 0 ? 'Admin belum menambahkan tugas' : 'Coba ubah filter atau kata kunci pencarian'}
             </p>
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered.map((task) => {
-              const status = getStatus(task);
-              return (
-                <div
-                  key={task.id}
-                  className={`rounded-xl border p-4 transition-all ${
-                    status === "terlambat"
-                      ? "border-[#ef4444]/30 bg-[#ef4444]/5"
-                      : status === "selesai"
-                      ? "border-[#3b82f6]/20 bg-[#1a1a1a] opacity-60"
-                      : "border-[#1e1e1e] bg-[#141414] hover:border-[#2a2a2a]"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <span
-                          className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-                            status === "aktif"
-                              ? "bg-[#22c55e]/15 text-[#22c55e]"
-                              : status === "terlambat"
-                              ? "bg-[#ef4444]/15 text-[#ef4444]"
-                              : "bg-[#3b82f6]/15 text-[#3b82f6]"
-                          }`}
-                        >
-                          <span>{status === "aktif" ? "⏳" : status === "terlambat" ? "⚠️" : "✅"}</span>
-                          {status === "aktif"
-                            ? getTimeLeft(task.deadline)
-                            : status === "terlambat"
-                            ? getTimeLeft(task.deadline)
-                            : "Selesai"}
-                        </span>
-                        <span className="text-xs text-[#555] bg-[#1a1a1a] px-2 py-0.5 rounded-full">
-                          {task.tipe === "teori" ? "📖 Teori" : "🔬 Praktikum"}
-                        </span>
-                      </div>
-                      <h3
-                        className={`font-semibold text-base leading-tight ${
-                          status === "selesai" ? "text-[#555] line-through" : "text-white"
-                        }`}
-                      >
-                        {task.nama_tugas}
-                      </h3>
-                      {task.deskripsi && (
-                        <p className="text-[#555] text-sm mt-1 line-clamp-2">{task.deskripsi}</p>
-                      )}
-                      <p className="text-[#3a3a3a] text-xs mt-2">
-                        📅 {formatDeadline(task.deadline)}
-                      </p>
-                    </div>
-                    {task.link_pengumpulan && (
-                      <a
-                        href={task.link_pengumpulan}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0 mt-0.5 px-3 py-1.5 bg-[#f5c518] text-black text-xs font-bold rounded-lg hover:bg-[#f5c518]/90 transition-colors"
-                      >
-                        Kumpul
-                      </a>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            <p className="text-xs text-gray-400 font-medium px-1">{filtered.length} tugas ditampilkan</p>
+            {filtered.map(task => (
+              <TaskCard key={task.id} task={task} />
+            ))}
           </div>
         )}
-      </div>
-    </main>
-  );
+      </main>
+    </div>
+  )
 }
