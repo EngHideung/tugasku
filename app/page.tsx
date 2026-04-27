@@ -91,7 +91,7 @@ export default function HomePage() {
                 <ListTodo className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-gray-900 text-lg leading-none">TugasKu</h1>
+                <h1 className="font-bold text-gray-900 text-lg leading-none">MyTugasGwejh</h1>
                 <p className="text-xs text-gray-400 mt-0.5">Daftar tugas kelas</p>
               </div>
             </div>

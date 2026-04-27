@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TugasKu - Daftar Tugas Kelas",
-  description: "Pantau deadline tugas kelas kamu",
+  title: "MyTugasGwejh - Daftar Tugas Kelas",
+  description: "Pantau deadline tugas kelas",
 };
 
 export default function RootLayout({
