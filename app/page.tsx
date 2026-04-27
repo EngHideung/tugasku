@@ -112,8 +112,8 @@ export default function HomePage() {
                 <ListTodo className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-gray-900 text-lg leading-none">TugasKu</h1>
-                <p className="text-xs text-gray-400 mt-0.5">Track semua tugasmu</p>
+                <h1 className="font-bold text-gray-900 text-lg leading-none">MyTugas AB</h1>
+                <p className="text-xs text-gray-400 mt-0.5">Track semua tugas</p>
               </div>
             </div>
             <button

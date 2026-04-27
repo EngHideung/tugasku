@@ -63,7 +63,7 @@ export default function AddTaskModal({ onClose, onAdd }: AddTaskModalProps) {
             <input
               type="text"
               className={inputCls}
-              placeholder="Contoh: Laporan Praktikum Fisika Bab 3"
+              placeholder="Contoh: Laporan Praktikum Software Engineering"
               value={form.nama_tugas}
               onChange={e => setForm(f => ({ ...f, nama_tugas: e.target.value }))}
             />
