@@ -1,5 +1,6 @@
 'use client'
-
+import { useDeadlineNotifications } from '@/hooks/useDeadlineNotifications';
+import NotificationButton from '@/components/NotificationButton';
 import { useState, useEffect, useMemo } from 'react'
 import { Task } from '@/types'
 import TaskCard from '@/components/TaskCard'
@@ -50,6 +51,9 @@ export default function HomePage() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
+  // ✅ Hook dipanggil langsung di body komponen, bukan di dalam useEffect
+  useDeadlineNotifications(tasks)
+
   const getTaskStatus = (task: Task): 'aktif' | 'terlambat' | 'selesai' => {
     if (task.selesai) return 'selesai'
     return new Date(task.deadline) < new Date() ? 'terlambat' : 'aktif'
@@ -99,12 +103,15 @@ export default function HomePage() {
                 <p className="text-xs text-gray-400 mt-0.5">Daftar tugas kelas</p>
               </div>
             </div>
-            <a
-              href="/admin"
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              Admin →
-            </a>
+            <div className="flex items-center gap-2">
+              <NotificationButton />
+              <a
+                href="/admin"
+                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                Admin →
+              </a>
+            </div>
           </div>
         </div>
       </header>
